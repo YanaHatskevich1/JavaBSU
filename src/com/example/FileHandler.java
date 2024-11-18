@@ -1,103 +1,116 @@
 package com.example;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FileHandler {
-    public static void main(String[] args) {
-        String inputFilePath = "input.txt";
-        String outputFilePath = "output.txt";
 
+    private static final Pattern ARITHMETIC_PATTERN = Pattern.compile("(\\d+)\\s*([+\\-*/])\\s*(\\d+)");
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Выберите тип файла для обработки (введите 'txt' или 'json'):");
+        String fileType = scanner.nextLine().trim().toLowerCase();
+
+        try {
+            if ("txt".equals(fileType)) {
+                processTextFile("input.txt", "output.txt");
+            } else if ("json".equals(fileType)) {
+                JsonFileHandler.processJsonFile("input.json", "output.json");
+            } else {
+                System.out.println("Неверный выбор. Пожалуйста, введите 'txt' или 'json'.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Обработка текстового файла
+    public static void processTextFile(String inputFilePath, String outputFilePath) throws IOException {
         StringBuilder content = new StringBuilder();
 
-        // Чтение из файла и обработка данных
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                // Выберите метод обработки (оптимизированная версия)
-                content.append(processLine(line)).append("\n");
+                content.append("Без регулярных выражений: ").append(processWithoutRegex(line)).append("\n");
+                content.append("С регулярными выражениями: ").append(processWithRegex(line)).append("\n");
+                content.append("С использованием библиотеки: ").append(processWithLibrary(line)).append("\n");
             }
-            System.out.println("Файл прочитан: \n" + content.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        // Запись в файл
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
             writer.write(content.toString());
-            System.out.println("Данные записаны в файл.");
-        } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Данные записаны в output.txt.");
         }
     }
 
-    // Метод обработки строки: выбирает подходящий способ обработки
-    private static String processLine(String line) {
-        // Определите, использовать ли регулярные выражения
-        if (isSimpleExpression(line)) {
-            return calculateWithoutRegex(line);
-        } else {
-            return calculateWithRegex(line);
-        }
-    }
-
-    // Проверка, является ли строка простым арифметическим выражением
-    private static boolean isSimpleExpression(String line) {
-        return line.matches("\\d+\\s*[+\\-*/]\\s*\\d+");
-    }
-
-    // Метод для вычисления без использования регулярных выражений
-    private static String calculateWithoutRegex(String line) {
-        String[] parts = line.trim().split("\\s+");
+    // Метод 1: Обработка без регулярных выражений
+    public static String processWithoutRegex(String line) {
         try {
-            int num1 = Integer.parseInt(parts[0]);
-            int num2 = Integer.parseInt(parts[2]);
-            String operator = parts[1];
-            return String.valueOf(performCalculation(num1, num2, operator));
+            String[] tokens = line.split(" ");
+            double num1 = Double.parseDouble(tokens[0]);
+            String operator = tokens[1];
+            double num2 = Double.parseDouble(tokens[2]);
+
+            switch (operator) {
+                case "+":
+                    return String.valueOf(num1 + num2);
+                case "-":
+                    return String.valueOf(num1 - num2);
+                case "*":
+                    return String.valueOf(num1 * num2);
+                case "/":
+                    if (num2 != 0) {
+                        return String.valueOf(num1 / num2);
+                    } else {
+                        return "Ошибка: Деление на ноль";
+                    }
+                default:
+                    return line;
+            }
         } catch (Exception e) {
-            return "Ошибка: Некорректное выражение";
+            return "Ошибка обработки строки: " + line;
         }
     }
 
-    // Метод для вычисления с использованием регулярных выражений
-    private static String calculateWithRegex(String line) {
-        Pattern pattern = Pattern.compile("(\\d+)\\s*([+\\-*/])\\s*(\\d+)");
-        Matcher matcher = pattern.matcher(line);
+    // Метод 2: Обработка с использованием регулярных выражений
+    public static String processWithRegex(String line) {
+        Matcher matcher = ARITHMETIC_PATTERN.matcher(line);
+
         if (matcher.matches()) {
             try {
-                int num1 = Integer.parseInt(matcher.group(1));
-                int num2 = Integer.parseInt(matcher.group(3));
+                double num1 = Double.parseDouble(matcher.group(1));
                 String operator = matcher.group(2);
-                return String.valueOf(performCalculation(num1, num2, operator));
-            } catch (Exception e) {
-                return "Ошибка: Некорректное выражение";
+                double num2 = Double.parseDouble(matcher.group(3));
+
+                switch (operator) {
+                    case "+":
+                        return String.valueOf(num1 + num2);
+                    case "-":
+                        return String.valueOf(num1 - num2);
+                    case "*":
+                        return String.valueOf(num1 * num2);
+                    case "/":
+                        if (num2 != 0) {
+                            return String.valueOf(num1 / num2);
+                        } else {
+                            return "Ошибка: Деление на ноль";
+                        }
+                    default:
+                        return line;
+                }
+            } catch (NumberFormatException e) {
+                return "Ошибка обработки чисел: " + line;
             }
         }
-        return line; // Если выражение не подходит, вернуть исходную строку
+        return "Неверное выражение: " + line;
     }
 
-    // Общий метод для выполнения арифметических операций
-    private static int performCalculation(int num1, int num2, String operator) {
-        switch (operator) {
-            case "+":
-                return num1 + num2;
-            case "-":
-                return num1 - num2;
-            case "*":
-                return num1 * num2;
-            case "/":
-                if (num2 != 0) {
-                    return num1 / num2;
-                } else {
-                    throw new ArithmeticException("Деление на ноль");
-                }
-            default:
-                throw new IllegalArgumentException("Некорректный оператор");
-        }
+    // Метод 3: Обработка с использованием библиотеки (Java вычисления)
+    public static String processWithLibrary(String line) {
+        return processWithRegex(line); // Используем регулярные выражения для парсинга и вычислений
     }
 }
