@@ -1,8 +1,8 @@
 {
-  "expression1": "3 + 4",
+  "expression1": "3 + 10",
   "expression2": "10 - 5",
   "expression3": "100 * 7",
   "expression4": "16 / 2",
-  "note": "Это пример JSON файла с арифметическими выражениями"
+  "note": "."
 
 }

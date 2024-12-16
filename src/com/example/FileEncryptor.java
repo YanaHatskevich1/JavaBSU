@@ -8,27 +8,44 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Scanner;
 
 public class FileEncryptor {
     private static final String ALGORITHM = "AES";
 
     public static void main(String[] args) {
-        String inputFile = "output.txt";
-        String encryptedFile = "output_encrypted.txt";
-        String decryptedFile = "output_decrypted.txt";
+        if (args.length < 3) {
+            System.out.println("Использование: java FileEncryptor <encrypt|decrypt> <inputFile> <outputFile>");
+            return;
+        }
+
+        String action = args[0];
+        String inputFile = args[1];
+        String outputFile = args[2];
 
         try {
-            // Генерация секретного ключа
-            SecretKey secretKey = generateKey();
-
-            // Шифрование файла
-            encryptFile(secretKey, inputFile, encryptedFile);
-            System.out.println("Файл успешно зашифрован: " + encryptedFile);
-
-            // Дешифрование файла
-            decryptFile(secretKey, encryptedFile, decryptedFile);
-            System.out.println("Файл успешно расшифрован: " + decryptedFile);
-
+            if ("encrypt".equalsIgnoreCase(action)) {
+                SecretKey secretKey = generateKey();
+                encryptFile(secretKey, inputFile, outputFile);
+                System.out.println("Файл успешно зашифрован: " + outputFile);
+                // Вывод ключа в шестнадцатеричном формате для последующего использования при дешифровании
+                byte[] keyBytes = secretKey.getEncoded();
+                StringBuilder keyHex = new StringBuilder();
+                for (byte b : keyBytes) {
+                    keyHex.append(String.format("%02X", b));
+                }
+                System.out.println("Секретный ключ (для дешифрования сохраните его): " + keyHex.toString());
+            } else if ("decrypt".equalsIgnoreCase(action)) {
+                Scanner scanner = new Scanner(System.in);
+                System.out.print("Введите секретный ключ (hex): ");
+                String keyHex = scanner.nextLine();
+                SecretKey secretKey = hexToSecretKey(keyHex);
+                decryptFile(secretKey, inputFile, outputFile);
+                System.out.println("Файл успешно расшифрован: " + outputFile);
+                scanner.close();
+            } else {
+                System.out.println("Неверное действие. Используйте 'encrypt' или 'decrypt'.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -41,13 +58,22 @@ public class FileEncryptor {
         return keyGen.generateKey();
     }
 
+    // Конвертация hex строки в SecretKey
+    private static SecretKey hexToSecretKey(String hex) {
+        byte[] keyBytes = new byte[hex.length() / 2];
+        for(int i = 0; i < keyBytes.length; i++) {
+            keyBytes[i] = (byte) Integer.parseInt(hex.substring(2*i, 2*i+2), 16);
+        }
+        return new SecretKeySpec(keyBytes, ALGORITHM);
+    }
+
     // Шифрование файла
-    private static void encryptFile(SecretKey key, String inputFile, String outputFile) throws Exception {
+    public static void encryptFile(SecretKey key, String inputFile, String outputFile) throws Exception {
         processFile(Cipher.ENCRYPT_MODE, key, inputFile, outputFile);
     }
 
     // Дешифрование файла
-    private static void decryptFile(SecretKey key, String inputFile, String outputFile) throws Exception {
+    public static void decryptFile(SecretKey key, String inputFile, String outputFile) throws Exception {
         processFile(Cipher.DECRYPT_MODE, key, inputFile, outputFile);
     }
 

@@ -1,7 +1,7 @@
 {
-  "expression1": "7.0",
+  "expression1": "13.0",
   "expression2": "5.0",
   "expression3": "700.0",
   "expression4": "8.0",
-  "note": "Неверное выражение: Это пример JSON файла с арифметическими выражениями"
+  "note": "."
 }

@@ -1,35 +1,40 @@
 package com.example;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import java.io.File;
+import org.w3c.dom.*;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
 
-public class XmlFileHandler {
+public class XMLFileHandler {
 
-    // Метод для чтения XML файла
-    public <T> T readXmlFile(String filePath, Class<T> clazz) {
+    public static void processFile(String inputFilePath, String outputFilePath, int method) {
         try {
-            JAXBContext context = JAXBContext.newInstance(clazz);
-            Unmarshaller unmarshaller = context.createUnmarshaller();
-            return (T) unmarshaller.unmarshal(new File(filePath));
-        } catch (JAXBException e) {
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document document = builder.parse(new File(inputFilePath));
+
+            processNode(document.getDocumentElement(), method);
+
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.transform(new DOMSource(document), new StreamResult(new File(outputFilePath)));
+
+            System.out.println("Обработка XML завершена. Результаты записаны в " + outputFilePath);
+
+        } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
     }
 
-    // Метод для записи XML файла
-    public <T> void writeXmlFile(String filePath, T data) {
-        try {
-            JAXBContext context = JAXBContext.newInstance(data.getClass());
-            Marshaller marshaller = context.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            marshaller.marshal(data, new File(filePath));
-            System.out.println("XML файл успешно записан.");
-        } catch (JAXBException e) {
-            e.printStackTrace();
+    private static void processNode(Node node, int method) {
+        if (node.getNodeType() == Node.TEXT_NODE) {
+            node.setTextContent(FileHandler.processLine(node.getTextContent(), method));
+        } else if (node.hasChildNodes()) {
+            NodeList children = node.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                processNode(children.item(i), method);
+            }
         }
     }
 }

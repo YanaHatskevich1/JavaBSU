@@ -14,21 +14,44 @@ public class FileManager {
             System.out.println("4. Расшифровать файл");
             System.out.println("5. Выйти");
 
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Очистка буфера
+            System.out.print("Введите номер действия: ");
+            String choiceInput = scanner.nextLine();
+            int choice;
+            try {
+                choice = Integer.parseInt(choiceInput);
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный ввод. Пожалуйста, введите число от 1 до 5.");
+                continue;
+            }
 
             switch (choice) {
                 case 1:
-                    ZipArchiver.main(null); // Запуск архивации
+                    System.out.print("Введите путь к файлу для архивирования: ");
+                    String sourceFile = scanner.nextLine();
+                    System.out.print("Введите имя ZIP-архива: ");
+                    String zipFile = scanner.nextLine();
+                    ZipArchiver.main(new String[]{sourceFile, zipFile});
                     break;
                 case 2:
-                    ZipExtractor.main(null); // Запуск распаковки
+                    System.out.print("Введите путь к ZIP-архиву: ");
+                    String zipFileToExtract = scanner.nextLine();
+                    System.out.print("Введите имя распакованного файла: ");
+                    String destFile = scanner.nextLine();
+                    ZipExtractor.main(new String[]{zipFileToExtract, destFile});
                     break;
                 case 3:
-                    FileEncryptor.main(null); // Запуск шифрования
+                    System.out.print("Введите путь к файлу для шифрования: ");
+                    String fileToEncrypt = scanner.nextLine();
+                    System.out.print("Введите имя зашифрованного файла: ");
+                    String encryptedFile = scanner.nextLine();
+                    FileEncryptor.main(new String[]{"encrypt", fileToEncrypt, encryptedFile});
                     break;
                 case 4:
-                    FileEncryptor.main(null); // Запуск дешифрования
+                    System.out.print("Введите путь к зашифрованному файлу: ");
+                    String fileToDecrypt = scanner.nextLine();
+                    System.out.print("Введите имя расшифрованного файла: ");
+                    String decryptedFile = scanner.nextLine();
+                    FileEncryptor.main(new String[]{"decrypt", fileToDecrypt, decryptedFile});
                     break;
                 case 5:
                     System.out.println("Выход из программы.");

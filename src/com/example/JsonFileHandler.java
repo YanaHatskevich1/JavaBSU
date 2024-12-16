@@ -1,45 +1,63 @@
 package com.example;
 
 import com.google.gson.*;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+
+import java.io.*;
 
 public class JsonFileHandler {
 
-    public static void processJsonFile(String inputFilePath, String outputFilePath) throws IOException {
-        JsonElement jsonElement = readJsonFile(inputFilePath);
-        JsonElement processedElement = processJsonElement(jsonElement);
-        writeJsonFile(outputFilePath, processedElement);
-        System.out.println("Данные записаны в output.json.");
+    public static void processFile(String inputFilePath, String outputFilePath, int method) {
+        try (Reader reader = new FileReader(inputFilePath);
+             Writer writer = new FileWriter(outputFilePath)) {
+
+            // Создаем парсер и читаем JSON файл
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            JsonElement root = JsonParser.parseReader(reader);
+
+            // Обрабатываем JSON элементы
+            processJsonElement(root, method);
+
+            // Записываем обновленный JSON в файл
+            gson.toJson(root, writer);
+            System.out.println("Обработка JSON завершена. Результаты записаны в " + outputFilePath);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static JsonElement readJsonFile(String filePath) throws IOException {
-        FileReader reader = new FileReader(filePath);
-        JsonElement jsonElement = JsonParser.parseReader(reader);
-        reader.close();
-        return jsonElement;
-    }
-
-    public static void writeJsonFile(String filePath, JsonElement element) throws IOException {
-        FileWriter writer = new FileWriter(filePath);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        gson.toJson(element, writer);
-        writer.close();
-    }
-
-    public static JsonElement processJsonElement(JsonElement element) {
+    /**
+     * Рекурсивно обрабатывает JsonElement и обновляет его значения.
+     */
+    private static void processJsonElement(JsonElement element, int method) {
         if (element.isJsonObject()) {
-            JsonObject jsonObject = element.getAsJsonObject();
-            for (String key : jsonObject.keySet()) {
-                JsonElement value = jsonObject.get(key);
+            // Обрабатываем JsonObject
+            JsonObject obj = element.getAsJsonObject();
+            obj.entrySet().forEach(entry -> {
+                JsonElement value = entry.getValue();
                 if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
-                    String valueStr = value.getAsString();
-                    valueStr = FileHandler.processWithRegex(valueStr);
-                    jsonObject.addProperty(key, valueStr);
+                    // Обновляем строковое значение с вычисленным результатом
+                    String processedValue = FileHandler.processLine(value.getAsString(), method);
+                    entry.setValue(new JsonPrimitive(processedValue));
+                } else {
+                    // Рекурсивно обрабатываем дочерние элементы
+                    processJsonElement(value, method);
+                }
+            });
+        } else if (element.isJsonArray()) {
+            // Обрабатываем JsonArray
+            JsonArray array = element.getAsJsonArray();
+            for (int i = 0; i < array.size(); i++) {
+                JsonElement item = array.get(i);
+                if (item.isJsonPrimitive() && item.getAsJsonPrimitive().isString()) {
+                    // Обновляем строковое значение в массиве
+                    String processedValue = FileHandler.processLine(item.getAsString(), method);
+                    array.set(i, new JsonPrimitive(processedValue));
+                } else {
+                    // Рекурсивно обрабатываем дочерние элементы
+                    processJsonElement(item, method);
                 }
             }
         }
-        return element;
     }
 }

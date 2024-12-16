@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<expressions>
+    <expression>3 + 5</expression>
+    <expression>10 - 2</expression>
+    <expression>4 * 6</expression>
+    <expression>8 / 2</expression>
+</expressions>
